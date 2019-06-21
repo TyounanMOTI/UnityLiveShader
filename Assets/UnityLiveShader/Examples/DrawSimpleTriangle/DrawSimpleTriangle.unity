@@ -132,6 +132,7 @@ GameObject:
   - component: {fileID: 419976643}
   - component: {fileID: 419976642}
   - component: {fileID: 419976641}
+  - component: {fileID: 419976644}
   m_Layer: 5
   m_Name: InputField
   m_TagString: Untagged
@@ -251,7 +252,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.1764706}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -275,6 +276,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 419976639}
   m_CullTransparentMesh: 0
+--- !u!114 &419976644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 419976639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28c43c4f019f25c4e98132949bd96017, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  text: "cbuffer ConstantBuffer : register(b0)\r\n{\r\n    float4x4 mvpMatrix;\r\n}\r\n\r\nvoid
+    VS(float3 pos : POSITION, float4 color : COLOR, out float4 out_color : COLOR,
+    out float4 out_pos : SV_Position)\r\n{\r\n    out_pos = mul(float4(pos, 1), mvpMatrix);\r\n
+    \   out_color = color;\r\n}\r\n\r\nfloat4 PS(float4 color : COLOR) : SV_TARGET\r\n{\r\n
+    \   return color;\r\n}\r\n"
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -510,8 +528,8 @@ Camera:
   m_GameObject: {fileID: 963194225}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -608,7 +626,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -687,7 +705,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 0.5}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.5}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -707,7 +725,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Enter text...
+  m_Text: Enter HLSL Shader Code...
 --- !u!222 &1727595161
 CanvasRenderer:
   m_ObjectHideFlags: 0

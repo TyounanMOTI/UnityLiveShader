@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/UnityLiveShader/Examples/DrawSimpleTriangle/DrawSimpleTriangle.unity
+    guid: 26c7e3c48e51c1b4bb79efc06631360f
   m_configObjects: {}

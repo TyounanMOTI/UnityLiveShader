@@ -21,7 +21,7 @@ namespace UnityLiveShader
 
             var command = new CommandBuffer();
             command.IssuePluginEvent(drawCallback, 0);
-            mainCamera.AddCommandBuffer(CameraEvent.AfterSkybox, command);
+            mainCamera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, command);
         }
 
         public void SetShaderCode(string code)
