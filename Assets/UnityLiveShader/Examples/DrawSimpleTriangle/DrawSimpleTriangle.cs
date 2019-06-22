@@ -44,6 +44,11 @@ namespace UnityLiveShader
             Library.SetShaderCode(code);
         }
 
+        void Update()
+        {
+            Library.SetTime(Time.time);
+        }
+
         void OnRenderObject()
         {
             var eye = (mainCamera.stereoActiveEye == Camera.MonoOrStereoscopicEye.Left) ? Camera.StereoscopicEye.Left : Camera.StereoscopicEye.Right;

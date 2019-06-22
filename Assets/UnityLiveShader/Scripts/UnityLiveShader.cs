@@ -14,6 +14,11 @@ namespace UnityLiveShader
         {
             return NativePlugin.SetShaderCode(code) == 0;
         }
+
+        public static void SetTime(float time)
+        {
+            NativePlugin.SetTime(time);
+        }
     }
 
     static class NativePlugin
@@ -25,5 +30,8 @@ namespace UnityLiveShader
 
         [DllImport(dllName)]
         public static extern int SetShaderCode(string code);
+
+        [DllImport(dllName)]
+        public static extern void SetTime(float time);
     }
 }

@@ -288,10 +288,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28c43c4f019f25c4e98132949bd96017, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  text: "cbuffer ConstantBuffer : register(b0)\r\n{\r\n    float4x4 mvpMatrix;\r\n}\r\n\r\nvoid
-    VS(float3 pos : POSITION, float4 color : COLOR, out float4 out_color : COLOR,
-    out float4 out_pos : SV_Position)\r\n{\r\n    out_pos = mul(float4(pos, 1), mvpMatrix);\r\n
-    \   out_color = color;\r\n}\r\n\r\nfloat4 PS(float4 color : COLOR) : SV_TARGET\r\n{\r\n
+  text: "cbuffer ConstantBuffer : register(b0)\r\n{\r\n    float4x4 mvpMatrix;\r\n
+    \   float _Time;\r\n}\r\n\r\nvoid VS(float3 pos : POSITION, float4 color : COLOR,
+    out float4 out_color : COLOR, out float4 out_pos : SV_Position)\r\n{\r\n    out_pos
+    = mul(float4(pos, 1), mvpMatrix);\r\n    out_color = color * (sin(_Time * 2.0
+    * 3.14) + 1);\r\n}\r\n\r\nfloat4 PS(float4 color : COLOR) : SV_TARGET\r\n{\r\n
     \   return color;\r\n}\r\n"
 --- !u!1 &705507993
 GameObject:

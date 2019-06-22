@@ -31,13 +31,19 @@ public:
     device_context->RSSetState(rasterizer_state.Get());
     device_context->OMSetBlendState(blend_state.Get(), nullptr, 0xFFFFFFFF);
 
-    device_context->UpdateSubresource(model_view_projection_matrix_constant_buffer.Get(), 0, nullptr, data, 64, 0);
+    for (int i = 0; i < 16; i++)
+    {
+      constants.matrix[i] = reinterpret_cast<float*>(data)[i];
+    }
+
+    device_context->UpdateSubresource(constant_buffer.Get(), 0, nullptr, &constants, 64 + 16, 0);
 
     ID3D11Buffer* constant_buffers[] =
     {
-      model_view_projection_matrix_constant_buffer.Get(),
+      constant_buffer.Get(),
     };
     device_context->VSSetConstantBuffers(0, 1, constant_buffers);
+    device_context->PSSetConstantBuffers(0, 1, constant_buffers);
     device_context->VSSetShader(vertex_shader.Get(), nullptr, 0);
     device_context->PSSetShader(pixel_shader.Get(), nullptr, 0);
 
@@ -61,10 +67,15 @@ public:
     return prepared;
   }
 
+  void set_time(float time)
+  {
+    this->constants.time = time;
+  }
+
 private:
   ID3D11Device* d3d11_device;
   ComPtr<ID3D11Buffer> vertex_buffer;
-  ComPtr<ID3D11Buffer> model_view_projection_matrix_constant_buffer;
+  ComPtr<ID3D11Buffer> constant_buffer;
   ComPtr<ID3D11VertexShader> vertex_shader;
   ComPtr<ID3D11PixelShader> pixel_shader;
   ComPtr<ID3D11InputLayout> input_layout;
@@ -75,13 +86,21 @@ private:
   bool prepared = false;
   std::string shader_code;
 
-  struct Vertices
+  struct constants
+  {
+    float matrix[16];
+    float time;
+  };
+
+  constants constants;
+
+  struct vertices
   {
     float x, y, z;
     unsigned int color;
   };
 
-  Vertices vertices[3] =
+  vertices vertices[3] =
   {
     { -0.5f, -0.25f, 0, 0xFFFF0000 },
     {  0.5f, -0.25f, 0, 0xFF00FF00 },
@@ -142,10 +161,10 @@ private:
     buffer_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     d3d11_device->CreateBuffer(&buffer_desc, nullptr, &vertex_buffer);
 
-    buffer_desc.ByteWidth = 64;
+    buffer_desc.ByteWidth = 64 + 16;
     buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     buffer_desc.CPUAccessFlags = 0;
-    d3d11_device->CreateBuffer(&buffer_desc, nullptr, &model_view_projection_matrix_constant_buffer);
+    d3d11_device->CreateBuffer(&buffer_desc, nullptr, &constant_buffer);
 
     auto hr = d3d11_device->CreateVertexShader(
       vertex_shader_bytecode->GetBufferPointer(),
@@ -250,6 +269,11 @@ extern "C"
   UnityRenderingEventAndData UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetDrawCallback()
   {
     return Draw;
+  }
+
+  void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTime(float time)
+  {
+    g_renderer->set_time(time);
   }
 
   // return 0 on success.
