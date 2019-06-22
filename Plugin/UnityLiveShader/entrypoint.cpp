@@ -20,7 +20,7 @@ public:
     d3d11_device = device;
   }
 
-  void draw()
+  void draw(void* data)
   {
     if (!prepared) return;
 
@@ -31,7 +31,7 @@ public:
     device_context->RSSetState(rasterizer_state.Get());
     device_context->OMSetBlendState(blend_state.Get(), nullptr, 0xFFFFFFFF);
 
-    device_context->UpdateSubresource(model_view_projection_matrix_constant_buffer.Get(), 0, nullptr, model_view_projection_matrix, 64, 0);
+    device_context->UpdateSubresource(model_view_projection_matrix_constant_buffer.Get(), 0, nullptr, data, 64, 0);
 
     ID3D11Buffer* constant_buffers[] =
     {
@@ -52,11 +52,6 @@ public:
     device_context->IASetVertexBuffers(0, 1, vertex_buffers, &stride, &offset);
 
     device_context->Draw(1 * 3, 0);
-  }
-
-  void set_model_view_projection_matrix(const float* matrix)
-  {
-    std::copy(matrix, matrix + 16, model_view_projection_matrix);
   }
 
   bool set_shader_code(const char* code)
@@ -238,9 +233,9 @@ static void UNITY_INTERFACE_API GraphicsDeviceEventCallback(UnityGfxDeviceEventT
   }
 }
 
-static void UNITY_INTERFACE_API Draw(int eventId)
+static void UNITY_INTERFACE_API Draw(int eventId, void* data)
 {
-  g_renderer->draw();
+  g_renderer->draw(data);
 }
 
 extern "C"
@@ -252,14 +247,9 @@ extern "C"
     GraphicsDeviceEventCallback(kUnityGfxDeviceEventInitialize);
   }
 
-  UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetDrawCallback()
+  UnityRenderingEventAndData UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetDrawCallback()
   {
     return Draw;
-  }
-
-  void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetModelViewProjectionMatrix(const float* matrix)
-  {
-    g_renderer->set_model_view_projection_matrix(matrix);
   }
 
   // return 0 on success.

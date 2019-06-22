@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
@@ -11,6 +12,10 @@ namespace UnityLiveShader
         IntPtr drawCallback;
         readonly float[] matrixArray = new float[16];
         Camera mainCamera;
+        CommandBuffer leftEyeCommand;
+        CommandBuffer rightEyeCommand;
+        IntPtr leftMvpMatrix;
+        IntPtr rightMvpMatrix;
 
         void Start()
         {
@@ -18,10 +23,20 @@ namespace UnityLiveShader
             if (mainCamera == null) return;
 
             drawCallback = Library.GetDrawCallback();
+            leftEyeCommand = new CommandBuffer();
+            rightEyeCommand = new CommandBuffer();
 
-            var command = new CommandBuffer();
-            command.IssuePluginEvent(drawCallback, 0);
-            mainCamera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, command);
+            leftMvpMatrix = Marshal.AllocHGlobal(sizeof(float) * 16);
+            rightMvpMatrix = Marshal.AllocHGlobal(sizeof(float) * 16);
+
+            leftEyeCommand.IssuePluginEventAndData(drawCallback, 0, leftMvpMatrix);
+            rightEyeCommand.IssuePluginEventAndData(drawCallback, 0, rightMvpMatrix);
+        }
+
+        void OnApplicationQuit()
+        {
+            Marshal.FreeHGlobal(leftMvpMatrix);
+            Marshal.FreeHGlobal(rightMvpMatrix);
         }
 
         public void SetShaderCode(string code)
@@ -29,13 +44,24 @@ namespace UnityLiveShader
             Library.SetShaderCode(code);
         }
 
-        void Update()
+        void OnRenderObject()
         {
+            var eye = (mainCamera.stereoActiveEye == Camera.MonoOrStereoscopicEye.Left) ? Camera.StereoscopicEye.Left : Camera.StereoscopicEye.Right;
             var modelMatrix = transform.localToWorldMatrix;
-            var viewMatrix = mainCamera.worldToCameraMatrix;
-            var projectionMatrix = GL.GetGPUProjectionMatrix(mainCamera.projectionMatrix, true);
+            var viewMatrix = mainCamera.GetStereoViewMatrix(eye);
+            var projectionMatrix = GL.GetGPUProjectionMatrix(mainCamera.GetStereoProjectionMatrix(eye), true);
             var mvpMatrix = projectionMatrix * (viewMatrix * modelMatrix);
-            Library.SetModelViewProjectionMatrix(MatrixToArray(mvpMatrix.transpose));
+            var mvpMatrixArray = MatrixToArray(mvpMatrix.transpose);
+            if (eye == Camera.StereoscopicEye.Left)
+            {
+                Marshal.Copy(mvpMatrixArray, 0, leftMvpMatrix, 16);
+                Graphics.ExecuteCommandBuffer(leftEyeCommand);
+            }
+            else
+            {
+                Marshal.Copy(mvpMatrixArray, 0, rightMvpMatrix, 16);
+                Graphics.ExecuteCommandBuffer(rightEyeCommand);
+            }
         }
 
         float[] MatrixToArray(Matrix4x4 matrix)
