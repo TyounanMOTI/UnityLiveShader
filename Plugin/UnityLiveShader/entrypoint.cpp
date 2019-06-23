@@ -42,8 +42,10 @@ public:
     {
       constant_buffer.Get(),
     };
-    device_context->VSSetConstantBuffers(0, 1, constant_buffers);
-    device_context->PSSetConstantBuffers(0, 1, constant_buffers);
+
+    device_context->VSSetConstantBuffers(1, 1, constant_buffers);
+    device_context->PSSetConstantBuffers(1, 1, constant_buffers);
+
     device_context->VSSetShader(vertex_shader.Get(), nullptr, 0);
     device_context->PSSetShader(pixel_shader.Get(), nullptr, 0);
 
@@ -90,6 +92,7 @@ private:
   {
     float matrix[16];
     float time;
+    float padding[3];
   };
 
   constants constants;
@@ -106,8 +109,6 @@ private:
     {  0.5f, -0.25f, 0, 0xFF00FF00 },
     {  0,     0.5f,  0, 0xFF0000FF },
   };
-
-  float model_view_projection_matrix[16];
 
   bool create_resources()
   {
