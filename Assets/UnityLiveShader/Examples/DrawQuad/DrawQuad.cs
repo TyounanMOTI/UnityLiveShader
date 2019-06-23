@@ -7,8 +7,10 @@ using UnityEngine.UI;
 
 namespace UnityLiveShader
 {
-    public class DrawSimpleTriangle : MonoBehaviour
+    public class DrawQuad : MonoBehaviour
     {
+        public Mesh mesh;
+
         IntPtr drawCallback;
         readonly float[] matrixArray = new float[16];
         Camera mainCamera;
@@ -31,6 +33,8 @@ namespace UnityLiveShader
 
             leftEyeCommand.IssuePluginEventAndData(drawCallback, 0, leftMvpMatrix);
             rightEyeCommand.IssuePluginEventAndData(drawCallback, 0, rightMvpMatrix);
+
+            Library.SetMesh(mesh);
         }
 
         void OnApplicationQuit()

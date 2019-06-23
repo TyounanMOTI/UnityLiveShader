@@ -49,17 +49,15 @@ public:
     device_context->VSSetShader(vertex_shader.Get(), nullptr, 0);
     device_context->PSSetShader(pixel_shader.Get(), nullptr, 0);
 
-    const int vertex_size = 12 + 4;
-    device_context->UpdateSubresource(vertex_buffer.Get(), 0, nullptr, vertices, 1 * 3 * vertex_size, 0);
-
     device_context->IASetInputLayout(input_layout.Get());
     device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    UINT stride = vertex_size;
+    UINT stride = vertex_stride;
     UINT offset = 0;
-    ID3D11Buffer* vertex_buffers[1] = { vertex_buffer.Get() };
+    ID3D11Buffer* vertex_buffers[1] = { vertex_buffer };
     device_context->IASetVertexBuffers(0, 1, vertex_buffers, &stride, &offset);
+    device_context->IASetIndexBuffer(index_buffer, (is_index_buffer_32bit_width) ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT, 0);
 
-    device_context->Draw(1 * 3, 0);
+    device_context->DrawIndexed(index_count, 0, 0);
   }
 
   bool set_shader_code(const char* code)
@@ -74,9 +72,24 @@ public:
     this->constants.time = time;
   }
 
+  void set_vertex_buffer(ID3D11Buffer* buffer, size_t vertex_count)
+  {
+    this->vertex_count = vertex_count;
+    D3D11_BUFFER_DESC desc;
+    buffer->GetDesc(&desc);
+    vertex_stride = desc.ByteWidth / vertex_count;
+    vertex_buffer = buffer;
+  }
+
+  void set_index_buffer(ID3D11Buffer* buffer, size_t index_count, bool is_32bit_width)
+  {
+    this->index_count = index_count;
+    is_index_buffer_32bit_width = is_32bit_width;
+    index_buffer = buffer;
+  }
+
 private:
   ID3D11Device* d3d11_device;
-  ComPtr<ID3D11Buffer> vertex_buffer;
   ComPtr<ID3D11Buffer> constant_buffer;
   ComPtr<ID3D11VertexShader> vertex_shader;
   ComPtr<ID3D11PixelShader> pixel_shader;
@@ -84,7 +97,13 @@ private:
   ComPtr<ID3D11RasterizerState> rasterizer_state;
   ComPtr<ID3D11DepthStencilState> depth_stencil_state;
   ComPtr<ID3D11BlendState> blend_state;
+  ID3D11Buffer* vertex_buffer;
+  ID3D11Buffer* index_buffer;
 
+  size_t index_count;
+  size_t vertex_count;
+  size_t vertex_stride;
+  bool is_index_buffer_32bit_width;
   bool prepared = false;
   std::string shader_code;
 
@@ -96,19 +115,6 @@ private:
   };
 
   constants constants;
-
-  struct vertices
-  {
-    float x, y, z;
-    unsigned int color;
-  };
-
-  vertices vertices[3] =
-  {
-    { -0.5f, -0.25f, 0, 0xFFFF0000 },
-    {  0.5f, -0.25f, 0, 0xFF00FF00 },
-    {  0,     0.5f,  0, 0xFF0000FF },
-  };
 
   bool create_resources()
   {
@@ -157,11 +163,6 @@ private:
 
     D3D11_BUFFER_DESC buffer_desc;
     ZeroMemory(&buffer_desc, sizeof(buffer_desc));
-    buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-    buffer_desc.ByteWidth = 1024;
-    buffer_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    d3d11_device->CreateBuffer(&buffer_desc, nullptr, &vertex_buffer);
-
     buffer_desc.ByteWidth = 64 + 16;
     buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     buffer_desc.CPUAccessFlags = 0;
@@ -281,5 +282,15 @@ extern "C"
   int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetShaderCode(const char* code)
   {
     return g_renderer->set_shader_code(code) ? 0 : -1;
+  }
+
+  void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetVertexBuffer(ID3D11Buffer* buffer, int vertex_count)
+  {
+    g_renderer->set_vertex_buffer(buffer, static_cast<size_t>(vertex_count));
+  }
+
+  void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetIndexBuffer(ID3D11Buffer* buffer, unsigned int index_count, int index_format)
+  {
+    g_renderer->set_index_buffer(buffer, index_count, index_format == 1);
   }
 }
