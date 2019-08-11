@@ -20,6 +20,12 @@ public:
     d3d11_device = device;
   }
 
+  struct unity_constants
+  {
+    float mvp_matrix[16];
+    float camera_position[3];
+  };
+
   void draw(void* data)
   {
     if (!prepared) return;
@@ -31,12 +37,19 @@ public:
     device_context->RSSetState(rasterizer_state.Get());
     device_context->OMSetBlendState(blend_state.Get(), nullptr, 0xFFFFFFFF);
 
+    auto unity_data = reinterpret_cast<unity_constants*>(data);
+
     for (int i = 0; i < 16; i++)
     {
-      constants.matrix[i] = reinterpret_cast<float*>(data)[i];
+      constants.matrix[i] = unity_data->mvp_matrix[i];
     }
 
-    device_context->UpdateSubresource(constant_buffer.Get(), 0, nullptr, &constants, 64 + 16, 0);
+    for (int i = 0; i < 3; i++)
+    {
+      constants.camera_position[i] = unity_data->camera_position[i];
+    }
+
+    device_context->UpdateSubresource(constant_buffer.Get(), 0, nullptr, &constants, 64 + 16 * 3, 0);
 
     ID3D11Buffer* constant_buffers[] =
     {
@@ -51,13 +64,13 @@ public:
 
     device_context->IASetInputLayout(input_layout.Get());
     device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    UINT stride = vertex_stride;
+    UINT stride = static_cast<UINT>(vertex_stride);
     UINT offset = 0;
     ID3D11Buffer* vertex_buffers[1] = { vertex_buffer };
     device_context->IASetVertexBuffers(0, 1, vertex_buffers, &stride, &offset);
     device_context->IASetIndexBuffer(index_buffer, (is_index_buffer_32bit_width) ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT, 0);
 
-    device_context->DrawIndexed(index_count, 0, 0);
+    device_context->DrawIndexed(static_cast<UINT>(index_count), 0, 0);
   }
 
   bool set_shader_code(const char* code)
@@ -88,6 +101,19 @@ public:
     index_buffer = buffer;
   }
 
+  void set_resolution(float width, float height)
+  {
+    constants.screen_width = width;
+    constants.screen_height = height;
+  }
+
+  void set_camera_position(float x, float y, float z)
+  {
+    constants.camera_position[0] = x;
+    constants.camera_position[1] = y;
+    constants.camera_position[2] = z;
+  }
+
 private:
   ID3D11Device* d3d11_device;
   ComPtr<ID3D11Buffer> constant_buffer;
@@ -103,6 +129,8 @@ private:
   size_t index_count;
   size_t vertex_count;
   size_t vertex_stride;
+  size_t width;
+  size_t height;
   bool is_index_buffer_32bit_width;
   bool prepared = false;
   std::string shader_code;
@@ -111,7 +139,12 @@ private:
   {
     float matrix[16];
     float time;
-    float padding[3];
+    float time_padding[3];
+    float screen_width;
+    float screen_height;
+    float screen_padding[2];
+    float camera_position[3];
+    float camera_padding;
   };
 
   constants constants;
@@ -163,7 +196,7 @@ private:
 
     D3D11_BUFFER_DESC buffer_desc;
     ZeroMemory(&buffer_desc, sizeof(buffer_desc));
-    buffer_desc.ByteWidth = 64 + 16;
+    buffer_desc.ByteWidth = 64 + 16 * 3;
     buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     buffer_desc.CPUAccessFlags = 0;
     d3d11_device->CreateBuffer(&buffer_desc, nullptr, &constant_buffer);
@@ -294,5 +327,10 @@ extern "C"
   void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetIndexBuffer(ID3D11Buffer* buffer, unsigned int index_count, int index_format)
   {
     g_renderer->set_index_buffer(buffer, index_count, index_format == 1);
+  }
+
+  void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetResolution(float width, float height)
+  {
+    g_renderer->set_resolution(width, height);
   }
 }

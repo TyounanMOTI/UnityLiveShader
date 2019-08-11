@@ -27,6 +27,11 @@ namespace UnityLiveShader
             NativePlugin.SetVertexBuffer(mesh.GetNativeVertexBufferPtr(0), mesh.vertexCount);
             NativePlugin.SetIndexBuffer(mesh.GetNativeIndexBufferPtr(), mesh.GetIndexCount(0), (mesh.indexFormat == IndexFormat.UInt16) ? 0 : 1);
         }
+
+        public static void SetResolution(float width, float height)
+        {
+            NativePlugin.SetResolution(width, height);
+        }
     }
 
     static class NativePlugin
@@ -47,5 +52,8 @@ namespace UnityLiveShader
 
         [DllImport(dllName)]
         public static extern void SetTime(float time);
+
+        [DllImport(dllName)]
+        public static extern void SetResolution(float width, float height);
     }
 }
